@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Advanced Calculator</title>
+<style>
+  body {
+    background-color: #0b132b;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .calculator {
+    background: #1c2541;
+    padding: 20px;
+    border-radius: 15px;
+    width: 380px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+  .display {
+    width: 100%;
+    height: 60px;
+    background: #3a506b;
+    color: #00ffcc;
+    font-size: 1.5em;
+    text-align: right;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  button {
+    height: 50px;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #5bc0be;
+    color: #000;
+    transition: 0.15s;
+  }
+  button:hover {
+    background-color: #6fffe9;
+    transform: translateY(-2px);
+  }
+  .operator {
+    background-color: #3a506b;
+    color: #00ffcc;
+  }
+  .equal {
+    grid-column: span 2;
+    background-color: #00ffcc;
+    color: #000;
+    font-weight: bold;
+  }
+  .clear {
+    background-color: #ff4d4d;
+    color: #fff;
+  }
+
+  @media (max-width: 500px) {
+    .calculator { width: 94%; }
+    button { height: 44px; font-size: 0.95em; }
+    .display { font-size: 1.25em; height: 52px; }
+  }
+</style>
+</head>
+<body>
+  <div class="calculator">
+    <!-- input can be disabled, we still update .value programmatically -->
+    <input type="text" id="display" class="display" disabled />
+
+    <div class="buttons">
+      <button class="clear" onclick="clearDisplay()">AC</button>
+      <button onclick="deleteChar()">DEL</button>
+      <button onclick="append('(')">(</button>
+      <button onclick="append(')')">)</button>
+      <button class="operator" onclick="append('/')">÷</button>
+
+      <button onclick="append('sin(')">sin</button>
+      <button onclick="append('cos(')">cos</button>
+      <button onclick="append('tan(')">tan</button>
+      <button onclick="append('^')">xʸ</button>
+      <button class="operator" onclick="append('*')">×</button>
+
+      <button onclick="append('7')">7</button>
+      <button onclick="append('8')">8</button>
+      <button onclick="append('9')">9</button>
+      <button onclick="append('log(')">log</button>
+      <!-- use ASCII hyphen for label to avoid unicode minus issues -->
+      <button class="operator" onclick="append('-')">-</button>
+
+      <button onclick="append('4')">4</button>
+      <button onclick="append('5')">5</button>
+      <button onclick="append('6')">6</button>
+      <button onclick="append('√(')">√</button>
+      <button class="operator" onclick="append('+')">+</button>
+
+      <button onclick="append('1')">1</button>
+      <button onclick="append('2')">2</button>
+      <button onclick="append('3')">3</button>
+      <button onclick="append('π')">π</button>
+      <button onclick="append('e')">e</button>
+
+      <button onclick="append('0')">0</button>
+      <button onclick="append('.')">.</button>
+      <button onclick="append('^2')">x²</button>
+      <button onclick="append('^3')">x³</button>
+      <button class="equal" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+
+    function append(value) {
+      // Append value to the display string
+      display.value = (display.value || '') + value;
+    }
+
+    function clearDisplay() {
+      display.value = '';
+    }
+
+    function deleteChar() {
+      display.value = (display.value || '').slice(0, -1);
+    }
+
+    function calculate() {
+      let exp = (display.value || '').trim();
+
+      // If empty, do nothing
+      if (!exp) return;
+
+      // Replace user-friendly tokens with JS Math equivalents.
+      // NOTE: regex uses single backslash escapes where needed.
+      exp = exp
+        .replace(/π/g, 'Math.PI')
+        .replace(/\be\b/g, 'Math.E')
+        .replace(/√\(/g, 'Math.sqrt(')
+        .replace(/sin\(/g, 'Math.sin(')
+        .replace(/cos\(/g, 'Math.cos(')
+        .replace(/tan\(/g, 'Math.tan(')
+        .replace(/log\(/g, 'Math.log10(')  // log base 10
+        .replace(/ln\(/g, 'Math.log(')     // natural log
+        .replace(/\^/g, '**');             // exponent operator
+
+      try {
+        // Use Function instead of direct eval (slightly safer); still only use
+        // with sanitized transformations above.
+        const result = Function('"use strict"; return (' + exp + ')')();
+        // Guard against undefined / NaN / Infinity results
+        if (result === undefined || Number.isNaN(result) || !isFinite(result)) {
+          display.value = 'Error';
+        } else {
+          display.value = String(result);
+        }
+      } catch (err) {
+        display.value = 'Error';
+      }
+    }
+
+    // Keyboard support (basic)
+    document.addEventListener('keydown', (event) => {
+      const k = event.key;
+      if ((/^[0-9]$/).test(k) || ['+', '-', '*', '/', '.', '(', ')'].includes(k)) {
+        append(k);
+      } else if (k === 'Enter') {
+        event.preventDefault();
+        calculate();
+      } else if (k === 'Backspace') {
+        deleteChar();
+      } else if (k === 'Escape' || k.toLowerCase() === 'c') {
+        clearDisplay();
+      } else if (k === '%') {
+        append('%'); // note: % isn't processed specially here
+      }
+    });
+  </script>
+</body>
+</html>
