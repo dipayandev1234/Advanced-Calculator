@@ -39,11 +39,6 @@ It performs both **basic arithmetic operations** and **scientific calculations**
 
 3. Start performing calculations — both simple and advanced!
 
-📸 Preview
-
-
-(Add a screenshot of your calculator UI here)
-
 🧑‍💻 Author
 
 Dipayan Bhowmik
